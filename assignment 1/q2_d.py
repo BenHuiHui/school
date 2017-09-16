@@ -72,9 +72,8 @@ def read_bias(name, dimensions):
 
 def calculate_output(curr_weights, curr_bias, curr_x):
     # Offset input layer does not have z.
-    z_list = [[0]]
-    output_list = []
-    output_list.append(curr_x)
+    z_list = [np.array([0])]
+    output_list = [curr_x]
 
     for i in range(len(curr_weights)):
         z = np.dot(np.asarray(output_list[i]).astype(np.float64), np.asarray(curr_weights[i]).astype(np.float64)) \
