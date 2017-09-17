@@ -3,6 +3,7 @@ import os
 import numpy as np
 
 dims_list = [
+    [14, 4],
     [14, 100, 40, 4],
     [14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
      14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
@@ -15,11 +16,13 @@ relative_path = "Question2_123"
 train_x_filename = "x_train.csv"
 train_y_filename = "y_train.csv"
 
-initial_low = -0.01
-initial_high = 0.01
+initial_low = -0.2
+initial_high = 0.2
 
-interval = 0.00001
-lda = 0.03
+lda = 0.001
+max_epoch = 40
+momentum = 0.2
+
 
 def read_input(name):
     lst = list()
@@ -142,47 +145,52 @@ def calculate_weights_gradient(outputs, gradients, dims):
     return weights_gradients
 
 
-def stochastic(x, y ,w, b):
+def update(x, y, w, b, d, dw, db):
     o, z = calculate_output(w, b, x)
     s = calculate_softmax(o[len(o) - 1])
-    # print s
     error = calculate_error(s, y)
-    return error
-
-
-def update(x, y, w, b, d):
-    o, z = calculate_output(w, b, x)
-    s = calculate_softmax(o[len(o) - 1])
     g_b = pre_calculate_gradients(d, z, y, s, w)
     g_w = calculate_weights_gradient(o, g_b, d)
     for i in range(len(d) - 1):
-        w[i] = w[i] - lda * g_w[i]
-        b[i] = b[i] - lda * g_b[i]
+        if len(dw) > 0:
+            g_w[i] -= np.asarray(dw[i]) * momentum
+            g_b[i] -= np.asarray(db[i]) * momentum
 
-    return w, b
+        w[i] = w[i] - lda * np.asarray(g_w[i])
+        b[i] = b[i] - lda * np.asarray(g_b[i+1])
+
+    dw = g_w
+    db = g_b
+
+    return w, b, error, dw, db
 
 
-def do_work(dimension):
-    error_delta = 1000000
-    err_prev = np.nan
+def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch):
+    for epoch in range(max_epoch):
+        err_total = 0
+        for i in range(start, end, 1):
+            w, b, err, dw, db = update(x[i], y[i], w, b, dimension, dw, db)
+            err_total += err
 
+        err = err_total / (len(x)/6)
+        print epoch, err
+
+    return w, b, dw, db
+
+
+def do_work(dimension, max_epoch):
     x = read_input(os.path.join(relative_path, train_x_filename))
     y = read_y(os.path.join(relative_path, train_y_filename))
 
     w, b = initialize(dimension)
+    dw = []
+    db = []
 
-    while error_delta > interval:
-        for i in range(len(x)):
-            err = stochastic(x[i], y[i], w, b)
-            print err
+    batch_size = len(x) / 6
 
-            if (not np.isnan(err_prev)) and np.fabs(err - err_prev) < interval:
-                break
-
-            err_prev = err
-
-        if not np.isnan(err_prev) and np.fabs(err - err_prev) < interval:
-            break
+    for i in range(0, len(x)-batch_size, batch_size):
+        w, b, dw, db = batch(x, y, w, b, dw, db, i, i+batch_size, dimension, max_epoch)
+    # w, b, dw, db = batch(x, y, w, b, dw, db, 0, 0 + batch_size, dimension, max_epoch)
 
 
-do_work(dims_list[0])
+do_work(dims_list[1], max_epoch)
