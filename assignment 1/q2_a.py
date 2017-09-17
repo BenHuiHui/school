@@ -2,12 +2,6 @@ import csv
 import os
 import numpy as np
 
-relative_path = "b"
-weights_filenames = ["w-100-40-4.csv", "w-14*28-4.csv", "w-28*6-4.csv"]
-bias_filenames = ["b-100-40-4.csv", "b-14*28-4.csv", "b-28*6-4.csv"]
-output_bias_filenames = ["db-100-40-4.csv", "db-14*28-4.csv", "db-28*6-4.csv"]
-output_weights_filenames = ["dw-100-40-4.csv", "dw-14*28-4.csv", "dw-28*6-4.csv"]
-
 dims_list = [
     [14, 100, 40, 4],
     [14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
@@ -15,55 +9,54 @@ dims_list = [
      14, 14, 14, 14, 14, 14, 14, 14, 4],
     [14, 28, 28, 28, 28, 28, 28, 4],
 ]
-x = [-1, 1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, 1, 1]
-y = [0, 0, 0, 1]
 
+
+relative_path = "Question2_123"
+train_x_filename = "x_train.csv"
+train_y_filename = "y_train.csv"
+
+initial_low = -0.01
+initial_high = 0.01
+
+interval = 0.00001
+lda = 0.03
 
 def read_input(name):
     lst = list()
     with open(name) as f:
         reader = csv.reader(f)
         for row in reader:
-            lst.append(np.asarray(row[1:]).astype(np.float32))
+            lst.append(np.asarray(row).astype(np.float32))
     return lst
 
 
-def read_weights(name, dimensions):
-    input_weights = read_input(name)
+def read_y(name):
+    input_y = read_input(name)
 
-    current_row = 0
-    weights_list = []
+    y_list = []
 
-    for i in range(len(dimensions) - 1):
-        dim_prev = dimensions[i]
-        dim_next = dimensions[i + 1]
+    for i in range(len(input_y)):
+        if input_y[i] == 0:
+            y_list.append([1, 0, 0, 0])
+        elif input_y[i] == 1:
+            y_list.append([0, 1, 0, 0])
+        elif input_y[i] == 2:
+            y_list.append([0, 0, 1, 0])
+        elif input_y[i] == 3:
+            y_list.append([0, 0, 0, 1])
 
-        assert len(input_weights[current_row]) == dim_next
-
-        weight_for_current_dim = []
-
-        for d in range(dim_prev):
-            weight_for_current_dim.append(input_weights[current_row])
-            current_row = current_row + 1
-
-        weights_list.append(weight_for_current_dim)
-
-    return weights_list
+    return y_list
 
 
-def read_bias(name, dimensions):
-    input_bias = read_input(name)
+def initialize(dimension):
+    weights = []
+    bias = []
 
-    assert len(dimensions) == len(input_bias) + 1
+    for i in range(len(dimension)-1):
+        weights.append(np.random.uniform(initial_low, initial_high, (dimension[i], dimension[i+1])))
+        bias.append(np.random.uniform(initial_low, initial_high, dimension[i+1]))
 
-    bias_list = []
-
-    for i in range(len(dimensions) - 1):
-        assert len(input_bias[i]) == dimensions[i+1]
-
-        bias_list.append(input_bias[i])
-
-    return bias_list
+    return weights, bias
 
 
 def calculate_output(curr_weights, curr_bias, curr_x):
@@ -80,7 +73,7 @@ def calculate_output(curr_weights, curr_bias, curr_x):
         output = z
 
         # Relu.
-        #Q: is Relu needed at last layer?
+        # Q: is Relu needed at last layer?
         if i != len(curr_weights) - 1:
             output = np.maximum(z, 0)
 
@@ -93,6 +86,10 @@ def calculate_softmax(x):
     shiftx = x - np.max(x)
     exps = np.exp(shiftx)
     return exps / np.sum(exps)
+
+
+def calculate_error(softmax, y):
+    return -np.dot(y, np.transpose(np.log(softmax)))
 
 
 def relu_gradient(value):
@@ -145,34 +142,47 @@ def calculate_weights_gradient(outputs, gradients, dims):
     return weights_gradients
 
 
-def write_to_file(filename, content, nested):
-    with open(filename, 'wb') as resultFile:
-        wr = csv.writer(resultFile)
-        if nested:
-            for rows in content:
-                wr.writerows(rows)
-        else:
-            wr.writerows(content)
+def stochastic(x, y ,w, b):
+    o, z = calculate_output(w, b, x)
+    s = calculate_softmax(o[len(o) - 1])
+    # print s
+    error = calculate_error(s, y)
+    return error
 
 
-def do_work(weights_filename, bias_filename, output_weights_filename, output_bias_filename, dims):
-    weights = read_weights(os.path.join(relative_path, weights_filename), dims)
-    bias = read_bias(os.path.join(relative_path, bias_filename), dims)
+def update(x, y, w, b, d):
+    o, z = calculate_output(w, b, x)
+    s = calculate_softmax(o[len(o) - 1])
+    g_b = pre_calculate_gradients(d, z, y, s, w)
+    g_w = calculate_weights_gradient(o, g_b, d)
+    for i in range(len(d) - 1):
+        w[i] = w[i] - lda * g_w[i]
+        b[i] = b[i] - lda * g_b[i]
 
-    out, z = calculate_output(weights, bias, x)
-    soft = calculate_softmax(out[len(out) - 1])
-
-    g_b = pre_calculate_gradients(dims, z, y, soft, weights)
-
-    g_w = calculate_weights_gradient(out, g_b, dims)
-
-    write_to_file(output_weights_filename, g_w, 1)
-    write_to_file(output_bias_filename, g_b[1:], 0)
+    return w, b
 
 
-if __name__ == '__main__':
-    for index in range(len(dims_list)):
+def do_work(dimension):
+    error_delta = 1000000
+    err_prev = np.nan
 
-        do_work(weights_filenames[index], bias_filenames[index],
-                output_weights_filenames[index], output_bias_filenames[index],
-                dims_list[index])
+    x = read_input(os.path.join(relative_path, train_x_filename))
+    y = read_y(os.path.join(relative_path, train_y_filename))
+
+    w, b = initialize(dimension)
+
+    while error_delta > interval:
+        for i in range(len(x)):
+            err = stochastic(x[i], y[i], w, b)
+            print err
+
+            if (not np.isnan(err_prev)) and np.fabs(err - err_prev) < interval:
+                break
+
+            err_prev = err
+
+        if not np.isnan(err_prev) and np.fabs(err - err_prev) < interval:
+            break
+
+
+do_work(dims_list[0])
