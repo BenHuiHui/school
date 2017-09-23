@@ -176,18 +176,10 @@ def update(x, y, w, b, dim, dw, db, start, end):
             acc_db[j+1] += g_b[j+1]
 
     for i in range(len(dim) - 1):
-        if len(dw) > 0:
-            dw[i] = - lda * np.asarray(acc_dw[i]) / (end - start) + np.asarray(dw[i]) * momentum
-            db[i+1] = - lda * np.asarray(acc_db[i+1]) / (end - start) + np.asarray(db[i+1]) * momentum
-            w[i] = w[i] + dw[i]
-            b[i] = b[i] + db[i+1]
-        else:
-            dw = acc_dw
-            db = acc_db
-            dw[i] = - lda * np.asarray(acc_dw[i])
-            db[i+1] = - lda * np.asarray(acc_db[i+1])
-            w[i] = w[i] + dw[i]
-            b[i] = b[i] + db[i+1]
+        dw[i] = - lda * np.asarray(acc_dw[i]) / (end - start) + np.asarray(dw[i]) * momentum
+        db[i+1] = - lda * np.asarray(acc_db[i+1]) / (end - start) + np.asarray(db[i+1]) * momentum
+        w[i] = w[i] + dw[i]
+        b[i] = b[i] + db[i+1]
 
     return w, b, error_total, dw, db, correct_total
 
@@ -236,6 +228,10 @@ def do_work(dimension, max_epoch):
     w, b = initialize(dimension)
     dw = []
     db = []
+    db.append(np.zeros(0))
+    for i in range(len(dimension)-1):
+        dw.append(np.zeros((dimension[i], dimension[i + 1])))
+        db.append(np.zeros(dimension[i + 1]))
 
     batch(x, y, w, b, dw, db, 0, len(x), dimension, max_epoch, x_test, y_test)
 
