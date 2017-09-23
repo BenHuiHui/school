@@ -2,11 +2,11 @@ import csv
 import os
 import numpy as np
 
-relative_path = "b"
+relative_path = "c"
 weights_filenames = ["w-100-40-4.csv", "w-14*28-4.csv", "w-28*6-4.csv"]
 bias_filenames = ["b-100-40-4.csv", "b-14*28-4.csv", "b-28*6-4.csv"]
-output_bias_filenames = ["db-100-40-4.csv", "db-14*28-4.csv", "db-28*6-4.csv"]
-output_weights_filenames = ["dw-100-40-4.csv", "dw-14*28-4.csv", "dw-28*6-4.csv"]
+output_bias_filenames = ["db-100-40-4.csv", "db-14-28-4.csv", "db-28-6-4.csv"]
+output_weights_filenames = ["dw-100-40-4.csv", "dw-14-28-4.csv", "dw-28-6-4.csv"]
 
 dims_list = [
     [14, 100, 40, 4],
@@ -80,7 +80,6 @@ def calculate_output(curr_weights, curr_bias, curr_x):
         output = z
 
         # Relu.
-        #Q: is Relu needed at last layer?
         if i != len(curr_weights) - 1:
             output = np.maximum(z, 0)
 

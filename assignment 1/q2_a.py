@@ -3,7 +3,6 @@ import os
 import numpy as np
 
 dims_list = [
-    [14, 4],
     [14, 100, 40, 4],
     [14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
      14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
@@ -15,13 +14,16 @@ dims_list = [
 relative_path = "Question2_123"
 train_x_filename = "x_train.csv"
 train_y_filename = "y_train.csv"
+test_x_filename = "x_test.csv"
+test_y_filename = "y_test.csv"
 
-initial_low = -0.2
-initial_high = 0.2
+initial_low = -0.3
+initial_high = 0.3
 
-lda = 0.001
-max_epoch = 40
-momentum = 0.2
+lda = 0.01
+max_epoch = 100
+momentum = 0.3
+minimum_softmax = np.exp(-100)
 
 
 def read_input(name):
@@ -76,7 +78,6 @@ def calculate_output(curr_weights, curr_bias, curr_x):
         output = z
 
         # Relu.
-        # Q: is Relu needed at last layer?
         if i != len(curr_weights) - 1:
             output = np.maximum(z, 0)
 
@@ -92,6 +93,8 @@ def calculate_softmax(x):
 
 
 def calculate_error(softmax, y):
+    # Offset value that is too small to be presented by float32.
+    softmax = np.maximum(softmax, minimum_softmax)
     return -np.dot(y, np.transpose(np.log(softmax)))
 
 
@@ -105,11 +108,7 @@ def relu_gradient(value):
 def pre_calculate_gradients(dimensions, z_list, y_list, soft_max, current_weights):
     gradients = [0] * (len(dimensions)-1)
 
-    gradient = []
-    for i in range(dimensions[len(dimensions)-1]):
-        g = (soft_max[i] - y_list[i]) # * relu_gradient(z_list[len(dimensions)-1][i])
-        gradient.append(g)
-
+    gradient = np.asarray(soft_max) - np.asarray(y_list)
     gradients.append(gradient)
 
     for i in range(len(dimensions)-2, 0, -1):
@@ -153,27 +152,55 @@ def update(x, y, w, b, d, dw, db):
     g_w = calculate_weights_gradient(o, g_b, d)
     for i in range(len(d) - 1):
         if len(dw) > 0:
-            g_w[i] -= np.asarray(dw[i]) * momentum
-            g_b[i] -= np.asarray(db[i]) * momentum
+            dw[i] = - lda * np.asarray(g_w[i]) + np.asarray(dw[i]) * momentum
+            db[i+1] = - lda * np.asarray(g_b[i+1]) + np.asarray(db[i+1]) * momentum
+            w[i] = w[i] + dw[i]
+            b[i] = b[i] + db[i+1]
+        else:
+            dw = g_w
+            db = g_b
+            dw[i] = - lda * np.asarray(g_w[i])
+            db[i+1] = - lda * np.asarray(g_b[i+1])
+            w[i] = w[i] + dw[i]
+            b[i] = b[i] + db[i+1]
 
-        w[i] = w[i] - lda * np.asarray(g_w[i])
-        b[i] = b[i] - lda * np.asarray(g_b[i+1])
+    max_index = np.argmax(s)
+    correct = y[max_index]
 
-    dw = g_w
-    db = g_b
-
-    return w, b, error, dw, db
+    return w, b, error, dw, db, correct
 
 
-def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch):
+def batch_error(x, y, w, b):
+    o, z = calculate_output(w, b, x)
+    s = calculate_softmax(o[len(o) - 1])
+    e = calculate_error(s, y)
+    max_index = np.argmax(s)
+    correct = y[max_index]
+    return e, correct
+
+
+def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch, x_test, y_test):
     for epoch in range(max_epoch):
         err_total = 0
+        total_train_correct = 0
         for i in range(start, end, 1):
-            w, b, err, dw, db = update(x[i], y[i], w, b, dimension, dw, db)
+            w, b, err, dw, db, correct = update(x[i], y[i], w, b, dimension, dw, db)
             err_total += err
+            total_train_correct += correct
 
-        err = err_total / (len(x)/6)
-        print epoch, err
+        err_train = err_total / (end - start)
+
+        # Calculate test error.
+        error_test_total = 0
+        total_test_correct = 0
+        for i in range(len(x_test)):
+            err, correct = batch_error(x_test[i], y_test[i], w, b)
+            error_test_total += err
+            total_test_correct += correct
+
+        err_test = error_test_total / len(x_test)
+
+        print err_train, total_train_correct, (end - start), err_test, total_test_correct, len(x_test)
 
     return w, b, dw, db
 
@@ -181,6 +208,8 @@ def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch):
 def do_work(dimension, max_epoch):
     x = read_input(os.path.join(relative_path, train_x_filename))
     y = read_y(os.path.join(relative_path, train_y_filename))
+    x_test = read_input(os.path.join(relative_path, test_x_filename))
+    y_test = read_y(os.path.join(relative_path, test_y_filename))
 
     w, b = initialize(dimension)
     dw = []
@@ -188,9 +217,12 @@ def do_work(dimension, max_epoch):
 
     batch_size = len(x) / 6
 
-    for i in range(0, len(x)-batch_size, batch_size):
-        w, b, dw, db = batch(x, y, w, b, dw, db, i, i+batch_size, dimension, max_epoch)
-    # w, b, dw, db = batch(x, y, w, b, dw, db, 0, 0 + batch_size, dimension, max_epoch)
+    # for i in range(0, len(x)-batch_size, batch_size):
+    # w, b, dw, db = batch(x, y, w, b, dw, db, i, i+batch_size, dimension, max_epoch, x_test, y_test)
+    batch(x, y, w, b, dw, db, 0, len(x), dimension, max_epoch, x_test, y_test)
 
 
-do_work(dims_list[1], max_epoch)
+# for model in range(1, len(dims_list)):
+#    print model
+if __name__ == '__main__':
+    do_work(dims_list[1], max_epoch)
