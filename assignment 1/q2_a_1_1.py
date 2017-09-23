@@ -10,21 +10,20 @@ dims_list = [
     [14, 28, 28, 28, 28, 28, 28, 4],
 ]
 
-
 relative_path = "Question2_123"
 train_x_filename = "x_train.csv"
 train_y_filename = "y_train.csv"
 test_x_filename = "x_test.csv"
 test_y_filename = "y_test.csv"
 
-initial_low = -0.3
-initial_high = 0.3
+initial_low = -100000
+initial_high = 100000
 
-lda = 0.1
+lda = 0.01
 max_epoch = 100
-momentum = 0.4
+momentum = 0
 minimum_softmax = np.exp(-100)
-batch_size = 6
+batch_size = 32
 
 
 def read_input(name):
@@ -43,24 +42,30 @@ def read_y(name):
 
     for i in range(len(input_y)):
         if input_y[i] == 0:
-            y_list.append([1, 0, 0, 0])
+            y_list.append(np.asarray([1, 0, 0, 0]))
         elif input_y[i] == 1:
-            y_list.append([0, 1, 0, 0])
+            y_list.append(np.asarray([0, 1, 0, 0]))
         elif input_y[i] == 2:
-            y_list.append([0, 0, 1, 0])
+            y_list.append(np.asarray([0, 0, 1, 0]))
         elif input_y[i] == 3:
-            y_list.append([0, 0, 0, 1])
+            y_list.append(np.asarray([0, 0, 0, 1]))
 
     return y_list
 
 
-def initialize(dimension):
+def initialize(dimension, high, low):
     weights = []
     bias = []
+    min_val = 0.01
+    step = 5
 
     for i in range(len(dimension)-1):
-        weights.append(np.random.uniform(initial_low, initial_high, (dimension[i], dimension[i+1])))
-        bias.append(np.random.uniform(initial_low, initial_high, dimension[i+1]))
+        weights.append(np.random.uniform(low, high, (dimension[i], dimension[i+1])))
+        bias.append(np.random.uniform(low, high, dimension[i+1]))
+
+        if high > min_val:
+            high = high / step
+            low = low / step
 
     return weights, bias
 
@@ -95,7 +100,7 @@ def calculate_softmax(x):
 
 def calculate_error(softmax, y):
     # Offset value that is too small to be presented by float32.
-    softmax = np.maximum(softmax, minimum_softmax)
+    # softmax = np.maximum(softmax, minimum_softmax)
     return -np.dot(y, np.transpose(np.log(softmax)))
 
 
@@ -198,7 +203,11 @@ def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch, x_test, y_test):
         err_total = 0
         total_train_correct = 0
         for i in range(start, end, batch_size):
-            w, b, err, dw, db, correct = update(x, y, w, b, dimension, dw, db, start, start+batch_size)
+            batch_end = i+batch_size
+            if batch_end > end:
+                batch_end = end
+
+            w, b, err, dw, db, correct = update(x, y, w, b, dimension, dw, db, i, batch_end)
             err_total += err
             total_train_correct += correct
 
@@ -207,6 +216,7 @@ def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch, x_test, y_test):
         # Calculate test error.
         error_test_total = 0
         total_test_correct = 0
+
         for i in range(len(x_test)):
             err, correct = batch_error(x_test[i], y_test[i], w, b)
             error_test_total += err
@@ -225,7 +235,7 @@ def do_work(dimension, max_epoch):
     x_test = read_input(os.path.join(relative_path, test_x_filename))
     y_test = read_y(os.path.join(relative_path, test_y_filename))
 
-    w, b = initialize(dimension)
+    w, b = initialize(dimension, initial_high, initial_low)
     dw = []
     db = []
     db.append(np.zeros(0))
