@@ -24,6 +24,7 @@ lda = 0.01
 max_epoch = 100
 momentum = 0.3
 minimum_softmax = np.exp(-100)
+batch_size = 6
 
 
 def read_input(name):
@@ -144,30 +145,51 @@ def calculate_weights_gradient(outputs, gradients, dims):
     return weights_gradients
 
 
-def update(x, y, w, b, d, dw, db):
-    o, z = calculate_output(w, b, x)
-    s = calculate_softmax(o[len(o) - 1])
-    error = calculate_error(s, y)
-    g_b = pre_calculate_gradients(d, z, y, s, w)
-    g_w = calculate_weights_gradient(o, g_b, d)
-    for i in range(len(d) - 1):
+def update(x, y, w, b, dim, dw, db, start, end):
+    error_total = 0
+    correct_total = 0
+
+    acc_dw = []
+    acc_db = []
+    # Offset first column
+    acc_db.append(np.zeros(1))
+
+    for i in range(len(dim)-1):
+        acc_dw.append(np.zeros((dim[i], dim[i+1])))
+        acc_db.append(np.zeros(dim[i+1]))
+
+    for i in range(start, end, 1):
+        o, z = calculate_output(w, b, x[i])
+        s = calculate_softmax(o[len(o) - 1])
+        error = calculate_error(s, y[i])
+        error_total += error
+
+        max_index = np.argmax(s)
+        correct = y[i][max_index]
+        correct_total += correct
+
+        g_b = pre_calculate_gradients(dim, z, y[i], s, w)
+        g_w = calculate_weights_gradient(o, g_b, dim)
+
+        for j in range(len(dim) - 1):
+            acc_dw[j] += g_w[j]
+            acc_db[j+1] += g_b[j+1]
+
+    for i in range(len(dim) - 1):
         if len(dw) > 0:
-            dw[i] = - lda * np.asarray(g_w[i]) + np.asarray(dw[i]) * momentum
-            db[i+1] = - lda * np.asarray(g_b[i+1]) + np.asarray(db[i+1]) * momentum
+            dw[i] = - lda * np.asarray(acc_dw[i]) / (end - start) + np.asarray(dw[i]) * momentum
+            db[i+1] = - lda * np.asarray(acc_db[i+1]) / (end - start) + np.asarray(db[i+1]) * momentum
             w[i] = w[i] + dw[i]
             b[i] = b[i] + db[i+1]
         else:
-            dw = g_w
-            db = g_b
-            dw[i] = - lda * np.asarray(g_w[i])
-            db[i+1] = - lda * np.asarray(g_b[i+1])
+            dw = acc_dw
+            db = acc_db
+            dw[i] = - lda * np.asarray(acc_dw[i])
+            db[i+1] = - lda * np.asarray(acc_db[i+1])
             w[i] = w[i] + dw[i]
             b[i] = b[i] + db[i+1]
 
-    max_index = np.argmax(s)
-    correct = y[max_index]
-
-    return w, b, error, dw, db, correct
+    return w, b, error_total, dw, db, correct_total
 
 
 def batch_error(x, y, w, b):
@@ -183,8 +205,8 @@ def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch, x_test, y_test):
     for epoch in range(max_epoch):
         err_total = 0
         total_train_correct = 0
-        for i in range(start, end, 1):
-            w, b, err, dw, db, correct = update(x[i], y[i], w, b, dimension, dw, db)
+        for i in range(start, end, batch_size):
+            w, b, err, dw, db, correct = update(x, y, w, b, dimension, dw, db, start, start+batch_size)
             err_total += err
             total_train_correct += correct
 
@@ -215,14 +237,8 @@ def do_work(dimension, max_epoch):
     dw = []
     db = []
 
-    batch_size = len(x) / 6
-
-    # for i in range(0, len(x)-batch_size, batch_size):
-    # w, b, dw, db = batch(x, y, w, b, dw, db, i, i+batch_size, dimension, max_epoch, x_test, y_test)
     batch(x, y, w, b, dw, db, 0, len(x), dimension, max_epoch, x_test, y_test)
 
 
-# for model in range(1, len(dims_list)):
-#    print model
 if __name__ == '__main__':
     do_work(dims_list[1], max_epoch)
