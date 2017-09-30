@@ -95,7 +95,7 @@ def calculate_softmax(x):
 
 def calculate_error(softmax, y):
     # Offset value that is too small to be presented by float32.
-    # softmax = np.maximum(softmax, minimum_softmax)
+    softmax = np.maximum(softmax, minimum_softmax)
     return -np.dot(y, np.transpose(np.log(softmax)))
 
 
@@ -172,53 +172,6 @@ def update(x, y, w, b, dim, dw, db):
 
     return w, b, error, dw, db, correct
 
-    '''
-    error_total = 0
-    correct_total = 0
-
-    acc_dw = []
-    acc_db = []
-    # Offset first column
-    acc_db.append(np.zeros(1))
-
-    for i in range(len(dim)-1):
-        acc_dw.append(np.zeros((dim[i], dim[i+1])))
-        acc_db.append(np.zeros(dim[i+1]))
-
-    for i in range(start, end, 1):
-        o, z = calculate_output(w, b, x[i])
-        s = calculate_softmax(o[len(o) - 1])
-        error = calculate_error(s, y[i])
-        error_total += error
-
-        max_index = np.argmax(s)
-        correct = y[i][max_index]
-        correct_total += correct
-
-        g_b = pre_calculate_gradients(dim, z, y[i], s, w)
-        g_w = calculate_weights_gradient(o, g_b, dim)
-
-        for j in range(len(dim) - 1):
-            acc_dw[j] += g_w[j]
-            acc_db[j+1] += g_b[j+1]
-
-    for i in range(len(dim) - 1):
-        if len(dw) > 0:
-            dw[i] = - lda * np.asarray(acc_dw[i]) / (end - start) + np.asarray(dw[i]) * momentum
-            db[i+1] = - lda * np.asarray(acc_db[i+1]) / (end - start) + np.asarray(db[i+1]) * momentum
-            w[i] = w[i] + dw[i]
-            b[i] = b[i] + db[i+1]
-        else:
-            dw = acc_dw
-            db = acc_db
-            dw[i] = - lda * np.asarray(acc_dw[i])
-            db[i+1] = - lda * np.asarray(acc_db[i+1])
-            w[i] = w[i] + dw[i]
-            b[i] = b[i] + db[i+1]
-
-    return w, b, error_total, dw, db, correct_total
-    '''
-
 
 def batch_error(x, y, w, b):
     o, z = calculate_output(w, b, x)
@@ -233,7 +186,7 @@ def batch(x, y, w, b, dw, db, start, end, dimension, max_epoch, x_test, y_test):
     for epoch in range(max_epoch):
         err_total = 0
         total_train_correct = 0
-        for i in range(start, end, batch_size):
+        for i in range(len(x)):
             w, b, err, dw, db, correct = update(x[i], y[i], w, b, dimension, dw, db)
             err_total += err
             total_train_correct += correct

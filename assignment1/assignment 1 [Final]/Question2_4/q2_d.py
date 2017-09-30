@@ -3,8 +3,8 @@ import os
 import numpy as np
 
 relative_path = "c"
-weights_filenames = ["w-100-40-4.csv", "w-14*28-4.csv", "w-28*6-4.csv"]
-bias_filenames = ["b-100-40-4.csv", "b-14*28-4.csv", "b-28*6-4.csv"]
+weights_filenames = ["w-100-40-4.csv", "w-14-28-4.csv", "w-28-6-4.csv"]
+bias_filenames = ["b-100-40-4.csv", "b-14-28-4.csv", "b-28-6-4.csv"]
 output_bias_filenames = ["db-100-40-4.csv", "db-14-28-4.csv", "db-28-6-4.csv"]
 output_weights_filenames = ["dw-100-40-4.csv", "dw-14-28-4.csv", "dw-28-6-4.csv"]
 
