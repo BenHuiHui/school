@@ -19,9 +19,9 @@ w = np.zeros((2, 3, 3, 3))
 
 # The first filter converts the image to grayscale.
 # Set up the red, green, and blue channels of the filter.
-w[0, 0, :, :] = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
-w[0, 1, :, :] = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
-w[0, 2, :, :] = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
+w[0, 0, :, :] = [[0, 0, 0], [0, 0.3, 0], [0, 0, 0]]
+w[0, 1, :, :] = [[0, 0, 0], [0, 0.6, 0], [0, 0, 0]]
+w[0, 2, :, :] = [[0, 0, 0], [0, 0.1, 0], [0, 0, 0]]
 
 # Second filter detects horizontal edges in the blue channel.
 w[1, 2, :, :] = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]

@@ -186,6 +186,7 @@ def conv_forward(x, w, b, conv_param):
       W' = 1 + (W + pad - WW) / stride
     - cache: (x, w, b, conv_param)
     """
+
     ###########################################################################
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
@@ -210,11 +211,13 @@ def conv_forward(x, w, b, conv_param):
                     h_end = k * stride + HH
                     w_start = l * stride
                     w_end = l * stride + WW
+
                     out[i, j, k, l] = np.sum(image[:, h_start:h_end, w_start:w_end] * w[j, :, :, :]) + b[j]
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
     cache = (x, w, b, conv_param)
     return out, cache
 
@@ -232,14 +235,48 @@ def conv_backward(dout, cache):
     - dw: Gradient with respect to w
     - db: Gradient with respect to b
     """
-    dx, dw, db = None, None, None
+
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+
+    x, w, b, conv_param = cache
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+    F, _, HH, WW = w.shape
+    N, C, H, W = x.shape
+    _, _, H_out, W_out = dout.shape
+
+    x_pad = np.pad(x, ((0, 0), (0, 0), (pad/2, pad/2), (pad/2, pad/2)), 'constant')
+
+    dx = np.zeros_like(x_pad)
+    dw = np.zeros_like(w)
+    db = np.zeros_like(b)
+
+    for i in range(N):
+        image = x_pad[i, :, :, :]
+
+        for j in range(F):
+
+            for k in range(H_out):
+                for l in range(W_out):
+                    h_start = k * stride
+                    h_end = k * stride + HH
+                    w_start = l * stride
+                    w_end = l * stride + WW
+                    dw[j, :, :, :] += image[:, h_start:h_end, w_start:w_end] * dout[i, j, k, l]
+
+                    db[j] += dout[i, j, k, l]
+
+                    dx[i, :, h_start:h_end, w_start:w_end] += dout[i, j, k, l] * w[j, :, :, :]
+
+    p = pad/2
+    dx = dx[:, :, p:-p, p:-p]
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
     return dx, dw, db
 
 
