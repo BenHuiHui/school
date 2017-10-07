@@ -63,7 +63,28 @@ def q7():
     out, _ = code_base.layers.max_pool_forward(x, pool_param)
     np.savetxt('./output_files/maxpool_forward_out.csv', out.ravel())
 
+def q8():
+    x_shape = (3, 2, 10, 10)
+    dout_shape = (3, 2, 5, 5)
+    x = np.loadtxt('./input_files/maxpool_backward_in_x.csv')
+    x = x.reshape(x_shape)
+    dout = np.loadtxt('./input_files/maxpool_backward_in_dout.csv')
+    dout = dout.reshape(dout_shape)
+    pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
+
+    dx_num = code_base.gradient_check.eval_numerical_gradient_array(
+        lambda x: code_base.layers.max_pool_forward(x, pool_param)[0], x, dout)
+
+    out, cache = code_base.layers.max_pool_forward(x, pool_param)
+    dx = code_base.layers.max_pool_backward(dout, cache)
+
+    np.savetxt('./output_files/maxpool_backward_out.csv', dx.ravel())
+
+    print('Testing conv_backward function')
+    print('dx error: ', rel_error(dx, dx_num))
+
 
 # q3()
 # q5()
-q7()
+# q7()
+q8()
