@@ -3,6 +3,7 @@ import numpy as np
 
 from code_base.layers import *
 from code_base.layer_utils import *
+from code_base.layer_utils import conv_relu_pool_forward, conv_relu_pool_backward
 
 
 class ThreeLayerConvNet(object):
@@ -49,7 +50,41 @@ class ThreeLayerConvNet(object):
     # hidden affine layer, and keys 'W3' and 'b3' for the weights and biases   #
     # of the output affine layer.                                              #
     ############################################################################
-    pass
+
+    #TODO: seed?
+
+    C, H, W = input_dim
+    W_con = np.random.normal(0, weight_scale, (num_filters, C, filter_size, filter_size))
+    b_con = np.zeros(num_filters)
+    self.params['W1'] = W_con
+    self.params['b1'] = b_con
+
+    # TODO: how to get the size?
+
+    F = num_filters
+    filter_height = filter_size
+    filter_width = filter_size
+    stride_conv = 1  # stride
+    P = (filter_size - 1) / 2  # padd
+    Hc = (H + 2 * P - filter_height) / stride_conv + 1
+    Wc = (W + 2 * P - filter_width) / stride_conv + 1
+
+    width_pool = 2
+    height_pool = 2
+    stride_pool = 2
+    Hp = (Hc - height_pool) / stride_pool + 1
+    Wp = (Wc - width_pool) / stride_pool + 1
+
+    W_hidden = np.random.normal(0, weight_scale, (C * Hp * Wp, hidden_dim))
+    b_hidden = np.zeros(hidden_dim)
+    self.params['W2'] = W_hidden
+    self.params['b2'] = b_hidden
+
+    W_out = np.random.normal(0, weight_scale, (hidden_dim, num_classes))
+    b_out = np.zeros(num_classes)
+    self.params['W3'] = W_out
+    self.params['b3'] = b_out
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -104,7 +139,9 @@ class ThreeLayerConvNet(object):
     # self.bn_params[1] to the forward pass for the second batch normalization #
     # layer, etc.                                                              #
     ############################################################################
-    pass
+
+
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################

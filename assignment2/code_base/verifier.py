@@ -1,5 +1,7 @@
 import numpy as np
 import layers
+from code_base.layer_utils import conv_relu_pool_forward, conv_relu_pool_backward, conv_relu_forward, conv_relu_backward
+from code_base.gradient_check import eval_numerical_gradient_array
 
 
 def rel_error(x, y):
@@ -59,4 +61,52 @@ def verify_max_pooling_forward():
     print('difference: ', rel_error(out, correct_out))
 
 
-verify_max_pooling_forward()
+def verify_sandwich_layer_conv_relu_pool():
+    np.random.seed(231)
+    x = np.random.randn(2, 3, 16, 16)
+    w = np.random.randn(3, 3, 3, 3)
+    b = np.random.randn(3, )
+    dout = np.random.randn(2, 3, 8, 8)
+    conv_param = {'stride': 1, 'pad': 2}
+    pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
+
+    out, cache = conv_relu_pool_forward(x, w, b, conv_param, pool_param)
+    dx, dw, db = conv_relu_pool_backward(dout, cache)
+
+    dx_num = eval_numerical_gradient_array(lambda x: conv_relu_pool_forward(x, w, b, conv_param, pool_param)[0], x,
+                                           dout)
+    dw_num = eval_numerical_gradient_array(lambda w: conv_relu_pool_forward(x, w, b, conv_param, pool_param)[0], w,
+                                           dout)
+    db_num = eval_numerical_gradient_array(lambda b: conv_relu_pool_forward(x, w, b, conv_param, pool_param)[0], b,
+                                           dout)
+
+    print('Testing conv_relu_pool')
+    print('dx error: ', rel_error(dx_num, dx))
+    print('dw error: ', rel_error(dw_num, dw))
+    print('db error: ', rel_error(db_num, db))
+
+
+def verify_sandwich_layer_conv_relu():
+    np.random.seed(231)
+    x = np.random.randn(2, 3, 8, 8)
+    w = np.random.randn(3, 3, 3, 3)
+    b = np.random.randn(3, )
+    dout = np.random.randn(2, 3, 8, 8)
+    conv_param = {'stride': 1, 'pad': 2}
+
+    out, cache = conv_relu_forward(x, w, b, conv_param)
+    dx, dw, db = conv_relu_backward(dout, cache)
+
+    dx_num = eval_numerical_gradient_array(lambda x: conv_relu_forward(x, w, b, conv_param)[0], x, dout)
+    dw_num = eval_numerical_gradient_array(lambda w: conv_relu_forward(x, w, b, conv_param)[0], w, dout)
+    db_num = eval_numerical_gradient_array(lambda b: conv_relu_forward(x, w, b, conv_param)[0], b, dout)
+
+    print('Testing conv_relu:')
+    print('dx error: ', rel_error(dx_num, dx))
+    print('dw error: ', rel_error(dw_num, dw))
+    print('db error: ', rel_error(db_num, db))
+
+
+# verify_max_pooling_forward()
+# verify_sandwich_layer_conv_relu_pool()
+verify_sandwich_layer_conv_relu()
