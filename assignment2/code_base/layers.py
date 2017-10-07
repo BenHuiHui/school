@@ -295,14 +295,42 @@ def max_pool_forward(x, pool_param):
     - out: Output data
     - cache: (x, pool_param)
     """
-    out = None
+
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
-    pass
+
+    H_pool = pool_param['pool_height']
+    W_pool = pool_param['pool_width']
+    stride = pool_param['stride']
+
+    N, C, H, W = x.shape
+
+    H_out = (H - H_pool) / stride + 1
+    W_out = (W - W_pool) / stride + 1
+
+    out = np.zeros((N, C, H_out, W_out))
+
+    for i in range(N):
+        for j in range(C):
+            for k in range(H_out):
+                for l in range(W_out):
+                    H_start = k * stride
+                    W_start = l * stride
+
+                    maximum = x[i, j, H_start, W_start]
+
+                    for m in range(H_pool):
+                        for n in range(W_pool):
+                            if maximum < x[i, j, H_start+m, W_start+n]:
+                                maximum = x[i, j, H_start+m, W_start+n]
+
+                    out[i, j, k, l] = maximum
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
     cache = (x, pool_param)
     return out, cache
 
