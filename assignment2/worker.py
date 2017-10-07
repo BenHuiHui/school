@@ -15,4 +15,5 @@ def q3():
     out, _ = code_base.layers.conv_forward(x, w, b, conv_param)
     np.savetxt('./output_files/conv_forward_out.csv', out.ravel(), delimiter=',')
 
+
 q3()
