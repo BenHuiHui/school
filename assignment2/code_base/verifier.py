@@ -2,6 +2,7 @@ import numpy as np
 import layers
 from code_base.layer_utils import conv_relu_pool_forward, conv_relu_pool_backward, conv_relu_forward, conv_relu_backward
 from code_base.gradient_check import eval_numerical_gradient_array
+from code_base.classifiers import cnn
 
 
 def rel_error(x, y):
@@ -107,6 +108,22 @@ def verify_sandwich_layer_conv_relu():
     print('db error: ', rel_error(db_num, db))
 
 
+def verify_initial_loss():
+    model = cnn.ThreeLayerConvNet()
+
+    N = 50
+    X = np.random.randn(N, 3, 32, 32)
+    y = np.random.randint(10, size=N)
+
+    loss, grads = model.loss(X, y)
+    print('Initial loss (no regularization): ', loss)
+
+    model.reg = 0.5
+    loss, grads = model.loss(X, y)
+    print('Initial loss (with regularization): ', loss)
+
+
 # verify_max_pooling_forward()
 # verify_sandwich_layer_conv_relu_pool()
-verify_sandwich_layer_conv_relu()
+# verify_sandwich_layer_conv_relu()
+verify_initial_loss()
