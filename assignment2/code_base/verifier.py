@@ -1,7 +1,7 @@
 import numpy as np
 import layers
 from code_base.layer_utils import conv_relu_pool_forward, conv_relu_pool_backward, conv_relu_forward, conv_relu_backward
-from code_base.gradient_check import eval_numerical_gradient_array
+from code_base.gradient_check import eval_numerical_gradient_array, eval_numerical_gradient
 from code_base.classifiers import cnn
 
 
@@ -123,7 +123,28 @@ def verify_initial_loss():
     print('Initial loss (with regularization): ', loss)
 
 
+def verify_gradient():
+    num_inputs = 2
+    input_dim = (3, 16, 16)
+    reg = 0.0
+    num_classes = 10
+    np.random.seed(231)
+    X = np.random.randn(num_inputs, *input_dim)
+    y = np.random.randint(num_classes, size=num_inputs)
+
+    model = cnn.ThreeLayerConvNet(num_filters=3, filter_size=3,
+                              input_dim=input_dim, hidden_dim=7,
+                              dtype=np.float64)
+    loss, grads = model.loss(X, y)
+    for param_name in sorted(grads):
+        f = lambda _: model.loss(X, y)[0]
+        param_grad_num = eval_numerical_gradient(f, model.params[param_name], verbose=False, h=1e-6)
+        e = rel_error(param_grad_num, grads[param_name])
+        print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
+
+
 # verify_max_pooling_forward()
 # verify_sandwich_layer_conv_relu_pool()
 # verify_sandwich_layer_conv_relu()
-verify_initial_loss()
+# verify_initial_loss()
+verify_gradient()
