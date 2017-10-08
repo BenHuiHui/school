@@ -189,7 +189,7 @@ def verify_model_on_small_data():
 
 
 def verify_on_full_data_without_dropout():
-    model = cnn.ThreeLayerConvNet(weight_scale=0.001, hidden_dim=500, reg=0.001)
+    model = cnn.ThreeLayerConvNet(weight_scale=0.001, hidden_dim=500, reg=0.001, dropout=0)
     data = get_CIFAR10_data()
 
     solver = Solver(model, data,
@@ -215,5 +215,5 @@ os.chdir(dir_path)
 # verify_sandwich_layer_conv_relu()
 # verify_initial_loss()
 # verify_gradient()
-verify_model_on_small_data()
-# verify_on_full_data_without_dropout()
+# verify_model_on_small_data()
+verify_on_full_data_without_dropout()

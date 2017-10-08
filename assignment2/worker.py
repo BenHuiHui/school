@@ -1,6 +1,7 @@
 import numpy as np
 import code_base.layers
 import code_base.gradient_check
+from code_base.layers import dropout_forward, dropout_backward
 
 
 def rel_error(x, y):
@@ -84,7 +85,34 @@ def q8():
     print('dx error: ', rel_error(dx, dx_num))
 
 
+def q18():
+    x = np.loadtxt('./input_files/dropout_forward_in_x.csv')
+    # Larger p means more dropout
+    p = 0.3
+    out_train, _ = dropout_forward(x, {'mode': 'train', 'p': p})
+    out_test, _ = dropout_forward(x, {'mode': 'test', 'p': p})
+
+    np.savetxt('./output_files/dropout_forward_out_train.csv', out_train)
+    np.savetxt('./output_files/dropout_forward_out_test.csv', out_test)
+
+
+def q19():
+    dout = np.loadtxt('./input_files/dropout_backward_in_dout.csv')
+    x = np.loadtxt('./input_files/dropout_backward_in_x.csv')
+    dropout_param = {'mode': 'train', 'p': 0.8}
+    out, cache = dropout_forward(x, dropout_param)
+    dx_train = dropout_backward(dout, cache)
+    np.savetxt('./output_files/dropout_backward_out_train.csv', dx_train)
+
+    dropout_param = {'mode': 'test', 'p': 0.8}
+    out, cache = dropout_forward(x, dropout_param)
+    dx_test = dropout_backward(dout, cache)
+    np.savetxt('./output_files/dropout_backward_out_test.csv', dx_test)
+
+
 # q3()
 # q5()
 # q7()
-q8()
+# q8()
+# q18()
+q19()
