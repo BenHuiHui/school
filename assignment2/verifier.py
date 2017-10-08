@@ -1,8 +1,11 @@
 import numpy as np
-import layers
+import code_base.layers
 from code_base.layer_utils import conv_relu_pool_forward, conv_relu_pool_backward, conv_relu_forward, conv_relu_backward
 from code_base.gradient_check import eval_numerical_gradient_array, eval_numerical_gradient
 from code_base.classifiers import cnn
+import matplotlib.pyplot as plt
+from code_base.solver import Solver
+from code_base.data_utils import get_CIFAR10_data
 
 
 def rel_error(x, y):
@@ -17,7 +20,7 @@ def verify_convo_forward():
     w = np.linspace(-0.2, 0.3, num=np.prod(w_shape)).reshape(w_shape)
     b = np.linspace(-0.1, 0.2, num=3)
     conv_param = {'stride': 2, 'pad': 2}
-    out, _ = layers.conv_forward(x, w, b, conv_param)
+    out, _ = code_base.layers.conv_forward(x, w, b, conv_param)
     correct_out = np.array([[[[-0.08759809, -0.10987781],
                                [-0.18387192, -0.2109216 ]],
                               [[ 0.21027089,  0.21661097],
@@ -42,7 +45,7 @@ def verify_max_pooling_forward():
     x = np.linspace(-0.3, 0.4, num=np.prod(x_shape)).reshape(x_shape)
     pool_param = {'pool_width': 2, 'pool_height': 2, 'stride': 2}
 
-    out, _ = layers.max_pool_forward(x, pool_param)
+    out, _ = code_base.layers.max_pool_forward(x, pool_param)
 
     correct_out = np.array([[[[-0.26315789, -0.24842105],
                               [-0.20421053, -0.18947368]],
@@ -143,8 +146,49 @@ def verify_gradient():
         print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
 
 
+def verify_model_on_small_data():
+    data = get_CIFAR10_data()
+    for k, v in data.items():
+        print('% s: ' % k, v.shape)
+
+    np.random.seed(231)
+
+    num_train = 100
+    small_data = {
+        'X_train': data['X_train'][:num_train],
+        'y_train': data['y_train'][:num_train],
+        'X_val': data['X_val'],
+        'y_val': data['y_val'],
+    }
+
+    model = cnn.ThreeLayerConvNet(weight_scale=1e-2)
+
+    solver = Solver(model, small_data,
+                    num_epochs=15, batch_size=50,
+                    update_rule='adam',
+                    optim_config={
+                        'learning_rate': 1e-3,
+                    },
+                    verbose=True, print_every=1)
+    solver.train()
+
+    plt.subplot(2, 1, 1)
+    plt.plot(solver.loss_history, 'o')
+    plt.xlabel('iteration')
+    plt.ylabel('loss')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(solver.train_acc_history, '-o')
+    plt.plot(solver.val_acc_history, '-o')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.show()
+
+
 # verify_max_pooling_forward()
 # verify_sandwich_layer_conv_relu_pool()
 # verify_sandwich_layer_conv_relu()
 # verify_initial_loss()
-verify_gradient()
+# verify_gradient()
+verify_model_on_small_data()

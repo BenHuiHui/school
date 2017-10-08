@@ -186,7 +186,7 @@ class ThreeLayerConvNet(object):
     dw_hidden_affine += self.reg * W2
 
     grads['W2'] = dw_hidden_affine
-    grads['b1'] = db_hidden_affine
+    grads['b2'] = db_hidden_affine
 
     dx_conv, dw_conv, db_conv = conv_relu_pool_backward(dx_hidden_affine.reshape(N, F, H, W), conv_cache)
     dw_conv += self.reg * W1
