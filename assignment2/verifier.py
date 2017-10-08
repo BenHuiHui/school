@@ -6,6 +6,8 @@ from code_base.classifiers import cnn
 import matplotlib.pyplot as plt
 from code_base.solver import Solver
 from code_base.data_utils import get_CIFAR10_data
+from code_base.vis_utils import visualize_grid
+import os
 
 
 def rel_error(x, y):
@@ -186,9 +188,32 @@ def verify_model_on_small_data():
     plt.show()
 
 
+def verify_on_full_data_without_dropout():
+    model = cnn.ThreeLayerConvNet(weight_scale=0.001, hidden_dim=500, reg=0.001)
+    data = get_CIFAR10_data()
+
+    solver = Solver(model, data,
+                    num_epochs=1, batch_size=50,
+                    update_rule='adam',
+                    optim_config={
+                        'learning_rate': 1e-3,
+                    },
+                    verbose=True, print_every=20)
+    solver.train()
+
+    grid = visualize_grid(model.params['W1'].transpose(0, 2, 3, 1))
+    plt.imshow(grid.astype('uint8'))
+    plt.axis('off')
+    plt.gcf().set_size_inches(5, 5)
+    plt.show()
+
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir_path)
 # verify_max_pooling_forward()
 # verify_sandwich_layer_conv_relu_pool()
 # verify_sandwich_layer_conv_relu()
 # verify_initial_loss()
 # verify_gradient()
 verify_model_on_small_data()
+# verify_on_full_data_without_dropout()
