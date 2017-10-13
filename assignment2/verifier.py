@@ -5,7 +5,7 @@ from code_base.gradient_check import eval_numerical_gradient_array, eval_numeric
 from code_base.classifiers import cnn
 import matplotlib.pyplot as plt
 from code_base.solver import Solver
-from code_base.data_utils import get_CIFAR10_data
+from code_base.data_utils import get_CIFAR2_data
 from code_base.vis_utils import visualize_grid
 import os
 
@@ -149,7 +149,7 @@ def verify_gradient():
 
 
 def verify_model_on_small_data():
-    data = get_CIFAR10_data()
+    data = get_CIFAR2_data()
     for k, v in data.items():
         print('% s: ' % k, v.shape)
 
@@ -190,7 +190,7 @@ def verify_model_on_small_data():
 
 def verify_on_full_data_without_dropout():
     model = cnn.ThreeLayerConvNet(weight_scale=0.001, hidden_dim=500, reg=0.001, dropout=0)
-    data = get_CIFAR10_data()
+    data = get_CIFAR2_data()
 
     solver = Solver(model, data,
                     num_epochs=1, batch_size=50,
@@ -200,6 +200,19 @@ def verify_on_full_data_without_dropout():
                     },
                     verbose=True, print_every=20)
     solver.train()
+
+    plt.subplot(2, 1, 1)
+    plt.plot(solver.loss_history, 'o')
+    plt.xlabel('iteration')
+    plt.ylabel('loss')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(solver.train_acc_history, '-o')
+    plt.plot(solver.val_acc_history, '-o')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.show()
 
     grid = visualize_grid(model.params['W1'].transpose(0, 2, 3, 1))
     plt.imshow(grid.astype('uint8'))
