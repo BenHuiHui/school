@@ -11,16 +11,16 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="CS5242_Assignment_2.ipynb" pinned="false" current-in-tab="false">
+      <file leaf-file-name="CS5242_Assignment_2.ipynb" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CS5242_Assignment_2.ipynb">
           <provider selected="true" editor-type-id="ipnb-editor">
             <state>
-              <selected id="43" />
+              <selected id="35" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="solver.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="solver.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code_base/solver.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="-4408">
@@ -210,13 +210,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/CS5242_Assignment_2.ipynb">
-      <provider selected="true" editor-type-id="ipnb-editor">
-        <state>
-          <selected id="12" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/output_files/dropout_forward_out_train.csv">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -248,6 +241,13 @@
           <folding>
             <element signature="e#0#47#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CS5242_Assignment_2.ipynb">
+      <provider selected="true" editor-type-id="ipnb-editor">
+        <state>
+          <selected id="43" />
         </state>
       </provider>
     </entry>

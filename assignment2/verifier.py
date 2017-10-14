@@ -189,11 +189,11 @@ def verify_model_on_small_data():
 
 
 def verify_on_full_data_without_dropout():
-    model = cnn.ThreeLayerConvNet(weight_scale=0.001, hidden_dim=500, reg=0.001, dropout=0)
+    model = ThreeLayerConvNet(num_classes=2, weight_scale=0.001, hidden_dim=500, reg=0, dropout=0)
     data = get_CIFAR2_data()
 
     solver = Solver(model, data,
-                    num_epochs=1, batch_size=50,
+                    num_epochs=10, batch_size=50,
                     update_rule='adam',
                     optim_config={
                         'learning_rate': 1e-3,
