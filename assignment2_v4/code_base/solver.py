@@ -5,7 +5,7 @@ from builtins import range
 from builtins import object
 import os
 import pickle as pickle
-
+import time
 import numpy as np
 
 from code_base import optim
@@ -267,6 +267,7 @@ class Solver(object):
 
             # Maybe print training loss
             if self.verbose and t % self.print_every == 0:
+                print(time.strftime("%I:%M:%S"))
                 print('(Iteration %d / %d) loss: %f' % (
                        t + 1, num_iterations, self.loss_history[-1]))
 
@@ -292,6 +293,7 @@ class Solver(object):
                 self._save_checkpoint()
 
                 if self.verbose:
+                    print(time.strftime("%I:%M:%S"))
                     print('(Epoch %d / %d) train acc: %f; val_acc: %f' % (
                            self.epoch, self.num_epochs, train_acc, val_acc))
 
