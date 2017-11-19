@@ -135,7 +135,27 @@ class SentimentAnalysisRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+
+        rnn_h, rnn_cache = rnn_forward(wordvecs, h0, Wx, Wh, b)
+        temp_affine_out, temp_affine_cache = temporal_affine_forward(rnn_h, W_a, b_a)
+        avg_out, avg_cache = average_forward(temp_affine_out, mask)
+        affine_out, affine_cache = affine_forward(avg_out, W_fc, b_fc)
+        loss, dx = softmax_loss(affine_out, labels)
+
+        # Backward
+        dx_affine, dw_affine, db_affine = affine_backward(dx, affine_cache)
+        dx_avg = average_backward(dx_affine, avg_cache)
+        dx_temp, dw_temp, db_temp = temporal_affine_backward(dx_avg, temp_affine_cache)
+        dx, dh0, dWx, dWh, db = rnn_backward(dx_temp, rnn_cache)
+
+        grads['Wx'] = dWx
+        grads['Wh'] = dWh
+        grads['b'] = db
+        grads['W_a'] = dw_temp
+        grads['b_a'] = db_temp
+        grads['W_fc'] = dw_affine
+        grads['b_fc'] = db_affine
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -159,7 +179,6 @@ class SentimentAnalysisRNN(object):
         - preds: Array of shape (N, 2) giving the predicted probability distribution,
           where each element is in the range of [0, 1.].
         """
-        preds = None
 
         # Unpack parameters
         Wx, Wh, b = self.params['Wx'], self.params['Wh'], self.params['b']
@@ -189,7 +208,18 @@ class SentimentAnalysisRNN(object):
         # rnn_step_forward and rnn_step_backward functions, not here.              #
         #                                                                          #
         ############################################################################
-        pass
+
+        # TODO: use the trained h0 value?
+        N, T, V = wordvecs.shape
+        H = self.params['Wh'].shape[0]
+        h0 = np.zeros((N, H))
+
+        rnn_h, _ = rnn_forward(wordvecs, h0, Wx, Wh, b)
+        temp_affine_out, _ = temporal_affine_forward(rnn_h, W_a, b_a)
+        avg_out, _ = average_forward(temp_affine_out, mask)
+        affine_out, _ = affine_forward(avg_out, W_fc, b_fc)
+        preds = softmax(affine_out)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
