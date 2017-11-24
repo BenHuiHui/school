@@ -209,7 +209,6 @@ class SentimentAnalysisRNN(object):
         #                                                                          #
         ############################################################################
 
-        # TODO: use the trained h0 value?
         N, T, V = wordvecs.shape
         H = self.params['Wh'].shape[0]
         h0 = np.zeros((N, H))
